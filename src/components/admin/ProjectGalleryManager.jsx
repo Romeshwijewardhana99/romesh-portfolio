@@ -11,6 +11,7 @@ export default function ProjectGalleryManager({ projectId, images = [] }) {
   const [busy, setBusy] = useState(false);
   const [refreshing, startTransition] = useTransition();
   const [error, setError] = useState("");
+  const [progress, setProgress] = useState("");
   const pending = busy || refreshing;
 
   function refreshGallery() {
@@ -24,8 +25,11 @@ export default function ProjectGalleryManager({ projectId, images = [] }) {
     setBusy(true);
     setError("");
 
+    const failures = [];
     try {
-      for (const file of files) {
+      for (const [index, file] of files.entries()) {
+        setProgress(`Uploading ${index + 1} of ${files.length}`);
+        try {
         const body = new FormData();
         body.append("file", file);
         const response = await fetch(`/api/admin/projects/${projectId}/images`, {
@@ -36,11 +40,14 @@ export default function ProjectGalleryManager({ projectId, images = [] }) {
         if (!response.ok || !data.ok) {
           throw new Error(data.message || "Unable to upload image.");
         }
+        } catch (error) {
+          failures.push(`${file.name}: ${error.message}`);
+        }
       }
-    } catch (error) {
-      setError(error.message);
+      if (failures.length) setError(`${failures.length} upload(s) failed. ${failures.join(" ")}`);
     } finally {
       setBusy(false);
+      setProgress("");
       if (inputRef.current) inputRef.current.value = "";
       refreshGallery();
     }
@@ -85,7 +92,7 @@ export default function ProjectGalleryManager({ projectId, images = [] }) {
           className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2.5 text-sm hover:bg-white/5 disabled:opacity-50"
         >
           {pending ? <Loader2 size={17} className="animate-spin" /> : <ImagePlus size={17} />}
-          {pending ? "Processing..." : "Add Images"}
+          {pending ? progress || "Processing..." : "Add Images"}
         </button>
       </div>
 
@@ -121,7 +128,7 @@ export default function ProjectGalleryManager({ projectId, images = [] }) {
                 />
               </div>
               <div className="flex items-center justify-between gap-3 p-3">
-                <p className="truncate text-xs text-neutral-500">{image.caption || "Gallery image"}</p>
+                <p className="truncate text-xs text-neutral-500">Order {image.sortOrder} · {image.caption || "Gallery image"}</p>
                 <button
                   type="button"
                   onClick={() => deleteImage(image)}

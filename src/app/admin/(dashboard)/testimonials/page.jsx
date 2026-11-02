@@ -1,173 +1,47 @@
 import Link from "next/link";
-import {
-  Plus,
-  Pencil,
-  Star,
-} from "lucide-react";
-
+import { Plus, Pencil, MessageSquareQuote, Star } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-
 import DeleteTestimonialButton from "@/components/admin/DeleteTestimonialButton";
+import AdminPageHeading from "@/components/admin/AdminPageHeading";
 
 export default async function TestimonialsPage() {
-  const testimonials =
-    await prisma.testimonial.findMany({
-      include: {
-        project: {
-          select: {
-            title: true,
-          },
-        },
-      },
-
-      orderBy: [
-        {
-          sortOrder: "asc",
-        },
-        {
-          createdAt: "desc",
-        },
-      ],
-    });
+  const testimonials = await prisma.testimonial.findMany({
+    include: { project: { select: { title: true } } },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+  });
 
   return (
     <section>
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-sm text-neutral-500">
-            Portfolio Content
-          </p>
-
-          <h1 className="mt-1 text-3xl font-semibold">
-            Testimonials
-          </h1>
-
-          <p className="mt-2 text-sm text-neutral-500">
-            Manage client feedback and
-            social proof.
-          </p>
-        </div>
-
-        <Link
-          href="/admin/testimonials/create"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black"
-        >
-          <Plus size={17} />
-
-          New Testimonial
-        </Link>
-      </div>
-
+      <AdminPageHeading eyebrow="Manage content / 04" title="Testimonials"
+        description="Show genuine feedback that helps clients and employers trust your work."
+        action={<Link href="/admin/testimonials/create" className="admin-btn-primary"><Plus size={17} /> New Testimonial</Link>}
+      />
       {testimonials.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-white/10 px-6 py-16 text-center">
-          <h2 className="text-lg font-medium">
-            No testimonials yet
-          </h2>
-
-          <p className="mt-2 text-sm text-neutral-500">
-            Client feedback can be added
-            here when you receive it.
-          </p>
+        <div className="admin-panel px-6 py-20 text-center">
+          <MessageSquareQuote size={30} className="mx-auto text-[#448663]" />
+          <h2 className="mt-5 text-xl font-bold text-[#1B432F]">No testimonials yet.</h2>
+          <p className="mt-2 text-sm text-[#6F8172]">When you have client feedback and permission to share it, add it here.</p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {testimonials.map(
-            (testimonial) => (
-              <article
-                key={testimonial.id}
-                className="rounded-2xl border border-white/10 bg-white/[0.025] p-5"
-              >
-                <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="max-w-3xl">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <div>
-                        <h2 className="font-medium text-white">
-                          {
-                            testimonial.clientName
-                          }
-                        </h2>
-
-                        {(testimonial.clientRole ||
-                          testimonial.company) && (
-                          <p className="mt-1 text-sm text-neutral-500">
-                            {[
-                              testimonial.clientRole,
-                              testimonial.company,
-                            ]
-                              .filter(Boolean)
-                              .join(" · ")}
-                          </p>
-                        )}
-                      </div>
-
-                      <span
-                        className={`rounded-full border px-2.5 py-1 text-xs ${
-                          testimonial.isVisible
-                            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
-                            : "border-neutral-500/20 bg-neutral-500/10 text-neutral-400"
-                        }`}
-                      >
-                        {testimonial.isVisible
-                          ? "Visible"
-                          : "Hidden"}
-                      </span>
-                    </div>
-
-                    {testimonial.rating && (
-                      <div className="mt-3 flex gap-1">
-                        {Array.from({
-                          length:
-                            testimonial.rating,
-                        }).map(
-                          (_, index) => (
-                            <Star
-                              key={index}
-                              size={14}
-                              fill="currentColor"
-                            />
-                          )
-                        )}
-                      </div>
-                    )}
-
-                    <blockquote className="mt-4 text-sm leading-7 text-neutral-300">
-                      “{testimonial.quote}”
-                    </blockquote>
-
-                    {testimonial.project && (
-                      <p className="mt-4 text-xs text-neutral-500">
-                        Related project:{" "}
-                        {
-                          testimonial.project
-                            .title
-                        }
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex shrink-0 gap-2">
-                    <Link
-                      href={`/admin/testimonials/${testimonial.id}/edit`}
-                      className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-neutral-300 hover:bg-white/5"
-                    >
-                      <Pencil size={15} />
-
-                      Edit
-                    </Link>
-
-                    <DeleteTestimonialButton
-                      testimonialId={
-                        testimonial.id
-                      }
-                      clientName={
-                        testimonial.clientName
-                      }
-                    />
-                  </div>
+        <div className="grid gap-5 2xl:grid-cols-2">
+          {testimonials.map((item) => (
+            <article key={item.id} className="admin-panel flex flex-col p-6 sm:p-7">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-base font-bold text-[#1B412F]">{item.clientName}</h2>
+                  <p className="mt-1 text-xs text-[#819286]">{[item.clientRole, item.company].filter(Boolean).join(" · ") || "Client"}</p>
                 </div>
-              </article>
-            )
-          )}
+                <span className={`admin-pill ${item.isVisible ? "admin-pill--green" : "admin-pill--gray"}`}>{item.isVisible ? "Visible" : "Hidden"}</span>
+              </div>
+              {item.rating ? <div className="mt-5 flex gap-1 text-[#A57A20]">{Array.from({ length: Math.min(5, Math.max(0, item.rating)) }).map((_, index) => <Star key={index} size={14} fill="currentColor" />)}</div> : null}
+              <blockquote className="mt-5 flex-1 text-sm leading-7 text-[#47624D]">“{item.quote}”</blockquote>
+              {item.project && <p className="mt-4 text-xs text-[#748979]">Related project: {item.project.title}</p>}
+              <div className="mt-7 flex flex-wrap justify-end gap-2 border-t border-[#E8EFE6] pt-5">
+                <Link href={`/admin/testimonials/${item.id}/edit`} className="admin-btn-secondary"><Pencil size={15} /> Edit</Link>
+                <DeleteTestimonialButton testimonialId={item.id} clientName={item.clientName} />
+              </div>
+            </article>
+          ))}
         </div>
       )}
     </section>

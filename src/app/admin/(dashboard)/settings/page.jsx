@@ -1,36 +1,18 @@
-import { prisma } from "@/lib/prisma";
-
+import { getSiteSettings } from "@/lib/site-settings";
+import { requireAdmin } from "@/lib/auth/admin";
 import SiteSettingsForm from "@/components/admin/SiteSettingsForm";
+import AdminPageHeading from "@/components/admin/AdminPageHeading";
 
 export default async function SettingsPage() {
-  const settings =
-    await prisma.siteSetting.findUnique({
-      where: {
-        id: 1,
-      },
-    });
+  await requireAdmin();
+  const settings = await getSiteSettings();
 
   return (
     <section className="mx-auto max-w-5xl">
-      <div className="mb-8">
-        <p className="text-sm text-neutral-500">
-          Portfolio Configuration
-        </p>
-
-        <h1 className="mt-1 text-3xl font-semibold">
-          Site Settings
-        </h1>
-
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-500">
-          Manage global portfolio
-          content, contact information,
-          social links and SEO settings.
-        </p>
-      </div>
-
-      <SiteSettingsForm
-        settings={settings}
+      <AdminPageHeading eyebrow="Portfolio configuration / 06" title="Site Settings"
+        description="Manage the site identity, hero message, contacts, profile image, social links and search visibility."
       />
+      <SiteSettingsForm settings={settings} />
     </section>
   );
 }

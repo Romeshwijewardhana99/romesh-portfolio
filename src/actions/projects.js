@@ -9,7 +9,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth/admin";
 import { slugify } from "@/lib/slugify";
-import { getCloudinary } from "@/lib/cloudinary";
+import { deleteProjectUploadDirectory } from "@/lib/uploads";
 
 const projectSchema = z.object({
   title: z
@@ -60,16 +60,6 @@ const projectSchema = z.object({
     .optional(),
 
   outcome: z
-    .string()
-    .trim()
-    .optional(),
-
-  coverImage: z
-    .string()
-    .trim()
-    .optional(),
-
-  coverImagePublicId: z
     .string()
     .trim()
     .optional(),
@@ -147,15 +137,7 @@ function getProjectData(
       formData.get("outcome") ??
       "",
 
-    coverImage:
-      formData.get(
-        "coverImage"
-      ) ?? "",
-
-    coverImagePublicId:
-      formData.get("coverImagePublicId") ?? undefined,
-
-    githubUrl:
+githubUrl:
       formData.get(
         "githubUrl"
       ) ?? "",
@@ -277,6 +259,7 @@ export async function createProject(
   );
 
   revalidatePath("/");
+  revalidatePath("/projects");
 
   redirect(`/admin/projects/${project.id}/edit`);
 }
@@ -404,6 +387,7 @@ export async function updateProject(
   );
 
   revalidatePath("/");
+  revalidatePath("/projects");
 
   revalidatePath(
     `/projects/${projectSlug}`
@@ -434,6 +418,8 @@ export async function deleteProject(
       select: {
         id: true,
         slug: true,
+        coverImage: true,
+        images: { select: { imageUrl: true } },
       },
     });
 
@@ -443,17 +429,23 @@ export async function deleteProject(
     };
   }
 
-  await prisma.project.delete({
-    where: {
-      id,
-    },
+  await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM projects WHERE id = ${id} FOR UPDATE`;
+    await tx.project.delete({ where: { id } });
   });
+
+  try {
+    await deleteProjectUploadDirectory(id);
+  } catch (error) {
+    console.error("Project image cleanup failed:", error.code || error.name);
+  }
 
   revalidatePath(
     "/admin/projects"
   );
 
   revalidatePath("/");
+  revalidatePath("/projects");
 
   revalidatePath(
     `/projects/${project.slug}`

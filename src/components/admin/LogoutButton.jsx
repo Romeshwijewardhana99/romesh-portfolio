@@ -6,28 +6,18 @@ import { LogOut } from "lucide-react";
 
 export default function LogoutButton() {
   const router = useRouter();
-
-  const [loading, setLoading] =
-    useState(false);
+  const [loading, setLoading] = useState(false);
 
   async function handleLogout() {
     if (loading) return;
-
     setLoading(true);
-
     try {
-      await fetch(
-        "/api/admin/auth/logout",
-        {
-          method: "POST",
-        }
-      );
-
-      router.replace(
-        "/admin/login"
-      );
-
+      const response = await fetch("/api/admin/auth/logout", { method: "POST" });
+      if (!response.ok) throw new Error("Logout failed");
+      router.replace("/admin/login");
       router.refresh();
+    } catch {
+      window.alert("Unable to sign out. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -38,15 +28,11 @@ export default function LogoutButton() {
       type="button"
       onClick={handleLogout}
       disabled={loading}
-      className="flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-sm text-neutral-300 transition hover:bg-white/5 hover:text-white disabled:opacity-50"
+      aria-label="Sign out"
+      className="inline-flex items-center gap-2 rounded-xl border border-[#CFDDCE] bg-white px-3.5 py-2.5 text-xs font-semibold text-[#315B40] transition hover:border-[#9DBCA1] hover:bg-[#E7F1E6] disabled:opacity-60"
     >
-      <LogOut size={16} />
-
-      <span className="hidden sm:inline">
-        {loading
-          ? "Signing out..."
-          : "Logout"}
-      </span>
+      <LogOut size={15} />
+      <span className="hidden sm:inline">{loading ? "Signing out..." : "Sign out"}</span>
     </button>
   );
 }

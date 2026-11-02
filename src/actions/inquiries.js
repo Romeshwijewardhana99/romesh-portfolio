@@ -1,288 +1,67 @@
 "use server";
 
-import { z } from "zod";
 import { revalidatePath } from "next/cache";
-
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth/admin";
+import { submitInquiry } from "@/lib/inquiries";
+import { INQUIRY_FIELDS, inquiryStatusChangeSchema, positiveIdSchema } from "@/lib/validations/inquiry";
 
-const inquirySchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(2, "Please enter your name.")
-    .max(120),
+function refreshInquiries(id) {
+  revalidatePath("/admin");
+  revalidatePath("/admin/inquiries");
+  if (id) revalidatePath(`/admin/inquiries/${id}`);
+}
 
-  email: z
-    .string()
-    .trim()
-    .email("Please enter a valid email address.")
-    .max(190),
+// Retain the existing server-action entry point with the same shared validation.
+export async function createInquiry(previousState, formData) {
+  const input = Object.fromEntries(INQUIRY_FIELDS.map((field) => [field, formData.get(field) ?? ""]));
+  const result = await submitInquiry(input);
+  if (result.body.ok) refreshInquiries();
+  return { success: result.body.ok, message: result.body.message, errors: result.body.errors || {} };
+}
 
-  phone: z
-    .string()
-    .trim()
-    .max(30)
-    .optional(),
-
-  company: z
-    .string()
-    .trim()
-    .max(150)
-    .optional(),
-
-  service: z
-    .string()
-    .trim()
-    .max(150)
-    .optional(),
-
-  budget: z
-    .string()
-    .trim()
-    .max(100)
-    .optional(),
-
-  timeline: z
-    .string()
-    .trim()
-    .max(100)
-    .optional(),
-
-  message: z
-    .string()
-    .trim()
-    .min(
-      20,
-      "Please provide a little more information about your project."
-    )
-    .max(5000),
-
-  // Honeypot field
-  website: z
-    .string()
-    .max(0)
-    .optional(),
-});
-
-export async function createInquiry(
-  previousState,
-  formData
-) {
-  const rawData = {
-    name:
-      formData.get("name") ?? "",
-
-    email:
-      formData.get("email") ?? "",
-
-    phone:
-      formData.get("phone") ?? "",
-
-    company:
-      formData.get("company") ?? "",
-
-    service:
-      formData.get("service") ?? "",
-
-    budget:
-      formData.get("budget") ?? "",
-
-    timeline:
-      formData.get("timeline") ?? "",
-
-    message:
-      formData.get("message") ?? "",
-
-    website:
-      formData.get("website") ?? "",
-  };
-
-  const parsed =
-    inquirySchema.safeParse(
-      rawData
-    );
-
-  if (!parsed.success) {
-    return {
-      success: false,
-      message:
-        "Please check the form fields.",
-      errors:
-        parsed.error.flatten()
-          .fieldErrors,
-    };
-  }
-
-  const {
-    website,
-    ...data
-  } = parsed.data;
-
-  // Bot filled honeypot
-  if (website) {
-    return {
-      success: true,
-      message:
-        "Thank you. Your inquiry has been received.",
-      errors: {},
-    };
-  }
-
+export async function updateInquiryStatus(inquiryId, status) {
+  await requireAdmin();
+  const parsed = inquiryStatusChangeSchema.safeParse({ id: inquiryId, status });
+  if (!parsed.success) return { success: false, message: "Invalid inquiry or status." };
   try {
-    await prisma.inquiry.create({
-      data: {
-        name: data.name,
-        email:
-          data.email.toLowerCase(),
-        phone:
-          data.phone || null,
-        company:
-          data.company || null,
-        service:
-          data.service || null,
-        budget:
-          data.budget || null,
-        timeline:
-          data.timeline || null,
-        message:
-          data.message,
-        status: "NEW",
-      },
-    });
-
-    revalidatePath(
-      "/admin/inquiries"
-    );
-
-    revalidatePath("/admin");
-
-    return {
-      success: true,
-      message:
-        "Thanks! Your project inquiry has been received. I'll get back to you soon.",
-      errors: {},
-    };
+    const result = await prisma.inquiry.updateMany({ where: { id: parsed.data.id }, data: { status: parsed.data.status } });
+    if (!result.count) return { success: false, message: "Inquiry not found." };
+    refreshInquiries(parsed.data.id);
+    return { success: true };
   } catch (error) {
-    console.error(
-      "Create inquiry failed:",
-      error
-    );
-
-    return {
-      success: false,
-      message:
-        "Unable to send your inquiry right now. Please try again.",
-      errors: {},
-    };
+    console.error("Inquiry status update failed:", error.code || error.name);
+    return { success: false, message: "Unable to update inquiry status." };
   }
 }
 
-export async function updateInquiryStatus(
-  inquiryId,
-  status
-) {
+export async function markInquiryRead(inquiryId) {
   await requireAdmin();
-
-  const id =
-    Number(inquiryId);
-
-  const allowedStatuses = [
-    "NEW",
-    "READ",
-    "REPLIED",
-    "CLOSED",
-  ];
-
-  if (
-    !Number.isInteger(id) ||
-    !allowedStatuses.includes(
-      status
-    )
-  ) {
-    return {
-      success: false,
-    };
-  }
-
-  const inquiry =
-    await prisma.inquiry.findUnique({
-      where: {
-        id,
-      },
+  const parsed = positiveIdSchema.safeParse(inquiryId);
+  if (!parsed.success) return { success: false };
+  try {
+    const result = await prisma.inquiry.updateMany({
+      where: { id: parsed.data, status: "NEW" }, data: { status: "READ" },
     });
-
-  if (!inquiry) {
-    return {
-      success: false,
-    };
+    if (result.count) refreshInquiries(parsed.data);
+    return { success: true };
+  } catch (error) {
+    console.error("Inquiry read update failed:", error.code || error.name);
+    return { success: false };
   }
-
-  await prisma.inquiry.update({
-    where: {
-      id,
-    },
-
-    data: {
-      status,
-    },
-  });
-
-  revalidatePath(
-    "/admin/inquiries"
-  );
-
-  revalidatePath(
-    `/admin/inquiries/${id}`
-  );
-
-  revalidatePath("/admin");
-
-  return {
-    success: true,
-  };
 }
 
-export async function deleteInquiry(
-  inquiryId
-) {
+// Preserve the existing explicit delete action; no automatic lead deletion.
+export async function deleteInquiry(inquiryId) {
   await requireAdmin();
-
-  const id =
-    Number(inquiryId);
-
-  if (!Number.isInteger(id)) {
-    return {
-      success: false,
-    };
+  const parsed = positiveIdSchema.safeParse(inquiryId);
+  if (!parsed.success) return { success: false };
+  try {
+    const result = await prisma.inquiry.deleteMany({ where: { id: parsed.data } });
+    refreshInquiries(parsed.data);
+    return { success: result.count > 0 };
+  } catch (error) {
+    console.error("Inquiry delete failed:", error.code || error.name);
+    return { success: false };
   }
-
-  const inquiry =
-    await prisma.inquiry.findUnique({
-      where: {
-        id,
-      },
-    });
-
-  if (!inquiry) {
-    return {
-      success: false,
-    };
-  }
-
-  await prisma.inquiry.delete({
-    where: {
-      id,
-    },
-  });
-
-  revalidatePath(
-    "/admin/inquiries"
-  );
-
-  revalidatePath("/admin");
-
-  return {
-    success: true,
-  };
 }

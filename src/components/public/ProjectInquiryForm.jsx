@@ -1,306 +1,108 @@
 "use client";
 
-import {
-  useActionState,
-  useEffect,
-  useRef,
-} from "react";
+import { useId, useRef, useState } from "react";
+import { Send, CheckCircle2 } from "lucide-react";
 
-import {
-  Send,
-  CheckCircle2,
-} from "lucide-react";
+const emptyState = { ok: false, message: "", errors: {} };
+const inputClass = "w-full rounded-xl border border-neutral-300 bg-transparent px-4 py-3 outline-none transition focus:border-neutral-900 dark:border-white/10 dark:focus:border-white/40";
 
-import {
-  createInquiry,
-} from "@/actions/inquiries";
+export default function ProjectInquiryForm({ services = [] }) {
+  const prefix = useId();
+  const formRef = useRef(null);
+  const submitting = useRef(false);
+  const [state, setState] = useState(emptyState);
+  const [pending, setPending] = useState(false);
 
-const initialState = {
-  success: false,
-  message: "",
-  errors: {},
-};
-
-function ErrorText({
-  error,
-}) {
-  if (!error?.length) {
-    return null;
+  async function submit(event) {
+    event.preventDefault();
+    if (submitting.current) return;
+    submitting.current = true;
+    setPending(true);
+    try {
+      const input = Object.fromEntries(new FormData(event.currentTarget));
+      const response = await fetch("/api/inquiries", {
+        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input),
+      });
+      const result = await response.json();
+      setState({ ok: response.ok && result.ok, message: result.message || "Unable to send your inquiry.", errors: result.errors || {} });
+      if (response.ok && result.ok) formRef.current?.reset();
+    } catch {
+      setState({ ...emptyState, message: "Unable to send your inquiry right now. Please try again." });
+    } finally {
+      submitting.current = false;
+      setPending(false);
+    }
   }
 
-  return (
-    <p className="mt-1 text-sm text-red-400">
-      {error[0]}
-    </p>
-  );
-}
+  function fieldError(name) {
+    return state.errors?.[name]?.[0];
+  }
 
-export default function ProjectInquiryForm({
-  services = [],
-}) {
-  const formRef =
-    useRef(null);
+  function errorText(name) {
+    return fieldError(name) ? <p id={`${prefix}-${name}-error`} className="mt-1 text-sm text-red-500">{fieldError(name)}</p> : null;
+  }
 
-  const [
-    state,
-    formAction,
-    pending,
-  ] = useActionState(
-    createInquiry,
-    initialState
-  );
-
-  useEffect(() => {
-    if (
-      state.success &&
-      formRef.current
-    ) {
-      formRef.current.reset();
-    }
-  }, [state.success]);
+  const selects = [
+    { name: "service", label: "What do you need?", options: [
+      ["", "Select a service"], ...services.map((service) => [service.title, service.title]), ["Other", "Other / Not sure"],
+    ] },
+    { name: "budget", label: "Estimated Budget", options: [
+      ["", "Not sure yet"], ["Under $500", "Under $500"], ["$500 - $1,000", "$500 ? $1,000"],
+      ["$1,000 - $3,000", "$1,000 ? $3,000"], ["$3,000+", "$3,000+"],
+    ] },
+    { name: "timeline", label: "Timeline", options: [
+      ["", "Flexible / Not sure"], ["As soon as possible", "As soon as possible"], ["Within 1 month", "Within 1 month"],
+      ["1 - 3 months", "1?3 months"], ["3+ months", "3+ months"],
+    ] },
+  ];
 
   return (
-    <form
-      ref={formRef}
-      action={formAction}
-      className="space-y-6"
-    >
-      {state.message && (
-        <div
-          className={`rounded-2xl border px-5 py-4 ${
-            state.success
-              ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
-              : "border-red-500/20 bg-red-500/10 text-red-300"
-          }`}
-        >
-          <div className="flex gap-3">
-            {state.success && (
-              <CheckCircle2
-                size={20}
-                className="mt-0.5 shrink-0"
-              />
-            )}
-
-            <p className="text-sm">
-              {state.message}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Spam honeypot */}
-      <div
-        aria-hidden="true"
-        className="hidden"
-      >
-        <label>
-          Website
-          <input
-            type="text"
-            name="website"
-            tabIndex={-1}
-            autoComplete="off"
-          />
-        </label>
+    <form ref={formRef} onSubmit={submit} noValidate aria-busy={pending} className="space-y-6">
+      {state.message && <div role={state.ok ? "status" : "alert"} className={`flex gap-3 rounded-2xl border px-5 py-4 text-sm ${state.ok ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-300"}`}>
+        {state.ok && <CheckCircle2 size={20} className="shrink-0" />}{state.message}
+      </div>}
+      <div className="hidden" aria-hidden="true">
+        <label htmlFor={prefix + "-website"}>Website</label>
+        <input id={prefix + "-website"} name="website" type="text" tabIndex={-1} autoComplete="off" />
       </div>
-
-      <div className="grid gap-5 sm:grid-cols-2">
-        <div>
-          <label className="mb-2 block text-sm">
-            Your Name *
-          </label>
-
-          <input
-            name="name"
-            required
-            autoComplete="name"
-            className="w-full rounded-xl border border-neutral-300 bg-transparent px-4 py-3 outline-none transition focus:border-neutral-900 dark:border-white/10 dark:focus:border-white/40"
-          />
-
-          <ErrorText
-            error={
-              state.errors?.name
-            }
-          />
+      <fieldset disabled={pending} className="space-y-6 disabled:opacity-70">
+        <legend className="sr-only">Project inquiry details</legend>
+        <div className="grid gap-5 sm:grid-cols-2">
+          {[
+            { name: "name", label: "Your Name", required: true, max: 100, autoComplete: "name" },
+            { name: "email", label: "Email", required: true, type: "email", max: 190, autoComplete: "email" },
+            { name: "phone", label: "Phone", type: "tel", max: 30, autoComplete: "tel" },
+            { name: "company", label: "Company / Organization", max: 120, autoComplete: "organization" },
+          ].map((field) => <div key={field.name}>
+            <label htmlFor={`${prefix}-${field.name}`} className="mb-2 block text-sm">{field.label}{field.required ? " *" : ""}</label>
+            <input id={`${prefix}-${field.name}`} name={field.name} type={field.type || "text"} required={field.required}
+              maxLength={field.max} autoComplete={field.autoComplete} className={inputClass}
+              aria-invalid={!!fieldError(field.name)} aria-describedby={fieldError(field.name) ? `${prefix}-${field.name}-error` : undefined} />
+            {errorText(field.name)}
+          </div>)}
         </div>
-
-        <div>
-          <label className="mb-2 block text-sm">
-            Email *
-          </label>
-
-          <input
-            type="email"
-            name="email"
-            required
-            autoComplete="email"
-            className="w-full rounded-xl border border-neutral-300 bg-transparent px-4 py-3 outline-none transition focus:border-neutral-900 dark:border-white/10 dark:focus:border-white/40"
-          />
-
-          <ErrorText
-            error={
-              state.errors?.email
-            }
-          />
+        <div className="grid gap-5 sm:grid-cols-2">
+          {selects.map((field) => <div key={field.name} className={field.name === "service" ? "sm:col-span-2" : ""}>
+            <label htmlFor={`${prefix}-${field.name}`} className="mb-2 block text-sm">{field.label}</label>
+            <select id={`${prefix}-${field.name}`} name={field.name} defaultValue="" className={inputClass + " dark:bg-neutral-950"}
+              aria-invalid={!!fieldError(field.name)} aria-describedby={fieldError(field.name) ? `${prefix}-${field.name}-error` : undefined}>
+              {field.options.map(([value, label], index) => <option key={value + index} value={value}>{label}</option>)}
+            </select>
+            {errorText(field.name)}
+          </div>)}
         </div>
-
         <div>
-          <label className="mb-2 block text-sm">
-            Phone
-          </label>
-
-          <input
-            type="tel"
-            name="phone"
-            autoComplete="tel"
-            className="w-full rounded-xl border border-neutral-300 bg-transparent px-4 py-3 outline-none transition focus:border-neutral-900 dark:border-white/10 dark:focus:border-white/40"
-          />
+          <label htmlFor={prefix + "-message"} className="mb-2 block text-sm">Project Description *</label>
+          <textarea id={prefix + "-message"} name="message" required minLength={20} maxLength={5000} rows={7}
+            placeholder="What are you trying to build? What problem should it solve?" className={inputClass + " resize-none"}
+            aria-invalid={!!fieldError("message")} aria-describedby={prefix + "-message-hint" + (fieldError("message") ? " " + prefix + "-message-error" : "")} />
+          <p id={prefix + "-message-hint"} className="mt-1 text-xs text-neutral-500">20?5,000 characters.</p>
+          {errorText("message")}
         </div>
-
-        <div>
-          <label className="mb-2 block text-sm">
-            Company /
-            Organization
-          </label>
-
-          <input
-            name="company"
-            autoComplete="organization"
-            className="w-full rounded-xl border border-neutral-300 bg-transparent px-4 py-3 outline-none transition focus:border-neutral-900 dark:border-white/10 dark:focus:border-white/40"
-          />
-        </div>
-      </div>
-
-      <div>
-        <label className="mb-2 block text-sm">
-          What do you need?
-        </label>
-
-        <select
-          name="service"
-          defaultValue=""
-          className="w-full rounded-xl border border-neutral-300 bg-transparent px-4 py-3 outline-none dark:border-white/10 dark:bg-neutral-950"
-        >
-          <option value="">
-            Select a service
-          </option>
-
-          {services.map(
-            (service) => (
-              <option
-                key={service.id}
-                value={
-                  service.title
-                }
-              >
-                {service.title}
-              </option>
-            )
-          )}
-
-          <option value="Other">
-            Other / Not sure
-          </option>
-        </select>
-      </div>
-
-      <div className="grid gap-5 sm:grid-cols-2">
-        <div>
-          <label className="mb-2 block text-sm">
-            Estimated Budget
-          </label>
-
-          <select
-            name="budget"
-            defaultValue=""
-            className="w-full rounded-xl border border-neutral-300 bg-transparent px-4 py-3 outline-none dark:border-white/10 dark:bg-neutral-950"
-          >
-            <option value="">
-              Not sure yet
-            </option>
-
-            <option value="Under $500">
-              Under $500
-            </option>
-
-            <option value="$500 - $1,000">
-              $500 – $1,000
-            </option>
-
-            <option value="$1,000 - $3,000">
-              $1,000 – $3,000
-            </option>
-
-            <option value="$3,000+">
-              $3,000+
-            </option>
-          </select>
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm">
-            Expected Timeline
-          </label>
-
-          <select
-            name="timeline"
-            defaultValue=""
-            className="w-full rounded-xl border border-neutral-300 bg-transparent px-4 py-3 outline-none dark:border-white/10 dark:bg-neutral-950"
-          >
-            <option value="">
-              Flexible / Not sure
-            </option>
-
-            <option value="As soon as possible">
-              As soon as possible
-            </option>
-
-            <option value="Within 1 month">
-              Within 1 month
-            </option>
-
-            <option value="1 - 3 months">
-              1 – 3 months
-            </option>
-
-            <option value="3+ months">
-              3+ months
-            </option>
-          </select>
-        </div>
-      </div>
-
-      <div>
-        <label className="mb-2 block text-sm">
-          Tell me about your project *
-        </label>
-
-        <textarea
-          name="message"
-          required
-          rows={7}
-          placeholder="What are you trying to build? What problem should it solve?"
-          className="w-full resize-none rounded-xl border border-neutral-300 bg-transparent px-4 py-3 outline-none transition focus:border-neutral-900 dark:border-white/10 dark:focus:border-white/40"
-        />
-
-        <ErrorText
-          error={
-            state.errors?.message
-          }
-        />
-      </div>
-
-      <button
-        type="submit"
-        disabled={pending}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-950 px-6 py-3.5 font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200 sm:w-auto"
-      >
-        <Send size={17} />
-
-        {pending
-          ? "Sending..."
-          : "Send Project Inquiry"}
-      </button>
+        <button type="submit" disabled={pending} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-950 px-6 py-3.5 font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200 sm:w-auto">
+          <Send size={17} />{pending ? "Sending..." : "Send Project Inquiry"}
+        </button>
+      </fieldset>
     </form>
   );
 }

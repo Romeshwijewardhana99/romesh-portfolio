@@ -2,14 +2,7 @@
 const nextConfig = {
   /* config options here */
   reactCompiler: true,
-  images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "res.cloudinary.com",
-      },
-    ],
-  },
+  allowedDevOrigins: ["172.31.100.39"],
 };
 
 export default nextConfig;

@@ -1,124 +1,72 @@
-﻿"use client";
+"use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useTransition } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { ImagePlus, Loader2, Trash2 } from "lucide-react";
 
-export default function CoverImageUploader({
-  initialUrl = "",
-  initialPublicId = "",
-}) {
+export default function CoverImageUploader({ projectId, initialUrl = "" }) {
   const inputRef = useRef(null);
+  const router = useRouter();
   const [imageUrl, setImageUrl] = useState(initialUrl);
-  const [imagePublicId, setImagePublicId] = useState(initialPublicId);
-  const [uploading, setUploading] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [refreshing, startTransition] = useTransition();
   const [error, setError] = useState("");
+  const pending = busy || refreshing;
 
-  async function uploadImage(event) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setUploading(true);
+  async function changeCover(method, file) {
+    if (!projectId) return;
+    setBusy(true);
     setError("");
-
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const response = await fetch("/api/admin/uploads/image", {
-        method: "POST",
-        body: formData,
+      const body = new FormData();
+      if (file) body.append("file", file);
+      const response = await fetch(`/api/admin/projects/${projectId}/cover`, {
+        method,
+        ...(method === "POST" ? { body } : {}),
       });
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Upload failed.");
-      }
-
-      setImageUrl(data.image.url);
-      setImagePublicId(data.image.publicId);
+      if (!response.ok || !data.ok) throw new Error(data.message || "Unable to update cover image.");
+      setImageUrl(method === "POST" ? data.url : "");
+      startTransition(() => router.refresh());
     } catch (error) {
       setError(error.message);
     } finally {
-      setUploading(false);
-      if (inputRef.current) {
-        inputRef.current.value = "";
-      }
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = "";
     }
   }
 
-  function removeImage() {
-    setImageUrl("");
-    setImagePublicId("");
-  }
+  if (!projectId) return <p className="text-sm text-neutral-400">Create the project before uploading images.</p>;
 
   return (
-    <div>
-      <input type="hidden" name="coverImage" value={imageUrl} />
-      <input type="hidden" name="coverImagePublicId" value={imagePublicId} />
-
-      {imageUrl ? (
-        <div className="overflow-hidden rounded-2xl border border-white/10 bg-neutral-900">
-          <div className="aspect-[16/9] overflow-hidden bg-black">
-            <img
-              src={imageUrl}
-              alt="Project cover preview"
-              className="h-full w-full object-cover"
-            />
-          </div>
-          <div className="flex flex-wrap items-center justify-between gap-3 p-4">
-            <p className="text-sm text-neutral-400">Project cover</p>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => inputRef.current?.click()}
-                disabled={uploading}
-                className="rounded-lg border border-white/10 px-3 py-2 text-sm hover:bg-white/5"
-              >
-                Replace
-              </button>
-              <button
-                type="button"
-                onClick={removeImage}
-                className="inline-flex items-center gap-2 rounded-lg border border-red-500/20 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10"
-              >
-                <Trash2 size={15} />
-                Remove
-              </button>
-            </div>
-          </div>
+    <div className="space-y-3">
+      {imageUrl && (
+        <div className="relative aspect-video overflow-hidden rounded-2xl border border-white/10 bg-neutral-900">
+          <Image src={imageUrl} alt="Project cover preview" fill unoptimized sizes="(max-width: 768px) 100vw, 800px" className="object-cover" />
         </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={uploading}
-          className="flex min-h-52 w-full flex-col items-center justify-center rounded-2xl border border-dashed border-white/15 bg-white/[0.02] text-neutral-400 transition hover:border-white/30 hover:bg-white/[0.04]"
-        >
-          {uploading ? (
-            <>
-              <Loader2 size={26} className="animate-spin" />
-              <span className="mt-3 text-sm">Uploading...</span>
-            </>
-          ) : (
-            <>
-              <ImagePlus size={28} />
-              <span className="mt-3 text-sm">Upload cover image</span>
-              <span className="mt-1 text-xs text-neutral-600">
-                JPG, PNG, WebP or AVIF · Max 8 MB
-              </span>
-            </>
-          )}
-        </button>
       )}
-
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/avif"
-        onChange={uploadImage}
-        className="hidden"
-      />
-      {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
+      <div className="flex flex-wrap gap-3">
+        <button type="button" onClick={() => inputRef.current?.click()} disabled={pending}
+          className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-4 py-3 text-sm hover:bg-white/5 disabled:opacity-50">
+          {pending ? <Loader2 size={18} className="animate-spin" /> : <ImagePlus size={18} />}
+          {pending ? "Processing..." : imageUrl ? "Replace Cover" : "Upload Cover Image"}
+        </button>
+        {imageUrl && (
+          <button type="button" disabled={pending} onClick={() => {
+            if (window.confirm("Remove this cover image?")) changeCover("DELETE");
+          }} className="inline-flex items-center gap-2 rounded-xl border border-red-500/20 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 disabled:opacity-50">
+            <Trash2 size={16} /> Remove
+          </button>
+        )}
+      </div>
+      <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp,image/avif" className="hidden" disabled={pending}
+        aria-label="Select project cover image" onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) changeCover("POST", file);
+        }} />
+      <p className="text-xs text-neutral-500">JPG, PNG, WebP or AVIF ? Max 8 MB. Cover changes are saved immediately.</p>
+      {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
     </div>
   );
 }

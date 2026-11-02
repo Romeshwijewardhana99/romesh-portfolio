@@ -1,15 +1,16 @@
-import Link from "next/link";
+
 import Image from "next/image";
+import Link from "next/link";
+import { FaGithub } from "react-icons/fa";
 
 import {
-  ArrowRight,
+  ArrowUpRight,
   ArrowDownRight,
+  FileText,
   MapPin,
 } from "lucide-react";
 
-export default function Hero({
-  settings,
-}) {
+export default function Hero({ settings }) {
   const title =
     settings?.heroTitle ||
     "I build modern digital products that solve real business problems.";
@@ -18,104 +19,175 @@ export default function Hero({
     settings?.heroSubtitle ||
     "Full-stack developer creating modern web applications, business systems and reliable digital solutions.";
 
+  const profileImage =
+    settings?.profileImage || null;
+
+  const available =
+    settings?.availableForWork ?? true;
+
   return (
-    <section className="relative overflow-hidden">
-      <div className="absolute left-1/2 top-0 -z-10 h-[600px] w-[900px] -translate-x-1/2 rounded-full bg-neutral-100 blur-3xl dark:bg-white/[0.03]" />
+    <section
+      className="relative isolate overflow-hidden bg-[#080E0C] text-white"
+    >
+      {/* SOFT EMERALD ATMOSPHERE */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_33%_53%,rgba(24,75,54,0.48)_0%,rgba(11,34,26,0.18)_43%,transparent_75%)]"
+      />
 
-      <div className="mx-auto grid min-h-[calc(100vh-72px)] max-w-7xl items-center gap-14 px-6 py-20 lg:grid-cols-[1.2fr_0.8fr]">
-        <div>
-          <div className="mb-7 flex flex-wrap items-center gap-3">
-            {settings?.availableForWork && (
-              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+      {/* SECONDARY LIGHT */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute bottom-[-250px] right-[-200px] h-[650px] w-[650px] rounded-full bg-[#194F38]/20 blur-[130px]"
+      />
 
-                {settings?.heroBadge ||
-                  "Available for freelance projects"}
-              </span>
-            )}
+      <div
+        className="relative mx-auto flex min-h-[680px] max-w-[1320px] flex-col justify-center px-6 pt-20 sm:px-8 lg:min-h-[740px] lg:px-12 lg:py-24"
+      >
+        {/* LEFT CONTENT */}
+        <div className="relative z-20 w-full pb-6 lg:w-[55%] lg:pb-0">
 
-            {settings?.location && (
-              <span className="inline-flex items-center gap-1.5 text-xs text-neutral-500">
-                <MapPin size={13} />
+          {/* AVAILABILITY */}
+          {available && (
+            <div className="mb-8 inline-flex items-center gap-2.5 text-xs font-medium text-[#BDE4CA]">
+              <span className="h-2 w-2 rounded-full bg-[#85DBA5]" />
 
-                {
-                  settings.location
-                }
-              </span>
-            )}
-          </div>
+              {settings?.heroBadge ||
+                "Available for freelance projects"}
+            </div>
+          )}
 
-          <p className="mb-5 text-sm font-medium uppercase tracking-[0.25em] text-neutral-500">
-            Full-Stack Developer
+          {/* INTRO */}
+          <p className="mb-3 text-sm font-medium text-[#94C8AA]">
+            Hello,
           </p>
 
-          <h1 className="max-w-4xl text-5xl font-semibold leading-[1.04] tracking-[-0.045em] sm:text-6xl lg:text-7xl">
+          <p className="mb-5 text-sm font-medium text-[#D9E9DF]">
+            I&apos;m Romesh Wijewardhana
+          </p>
+
+          {/* HEADLINE */}
+          <h1
+            className="max-w-[700px] text-[clamp(3.1rem,5.4vw,5.5rem)] font-semibold leading-[1.06] tracking-[-0.065em] text-white"
+          >
             {title}
           </h1>
 
-          <p className="mt-7 max-w-2xl text-base leading-7 text-neutral-600 sm:text-lg dark:text-neutral-400">
+          {/* DESCRIPTION */}
+          <p
+            className="mt-7 max-w-[530px] text-base leading-[1.85] text-[#C3D7C9] sm:text-lg"
+          >
             {subtitle}
           </p>
 
-          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+          {/* CTA BUTTONS */}
+          <div className="mt-9 flex flex-wrap gap-3">
             <Link
               href="/contact"
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-neutral-950 px-6 py-3.5 text-sm font-medium text-white transition hover:bg-neutral-800 dark:bg-white dark:text-black"
+              className="inline-flex min-h-[52px] items-center justify-center gap-3 rounded-full bg-[#D9F2E0] px-7 py-3.5 text-sm font-semibold text-[#143E2A] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white"
             >
-              Start a Project
-              <ArrowRight
-                size={16}
-              />
+              Let&apos;s Work Together
+              <ArrowUpRight size={17} />
             </Link>
 
             <Link
               href="/projects"
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-neutral-300 px-6 py-3.5 text-sm font-medium transition hover:bg-neutral-100 dark:border-white/10 dark:hover:bg-white/5"
+              className="inline-flex min-h-[52px] items-center justify-center gap-3 rounded-full border border-white/30 px-7 py-3.5 text-sm font-semibold text-white transition-all duration-300 hover:border-white hover:bg-white/10"
             >
-              View My Work
-              <ArrowDownRight
-                size={16}
-              />
+              Explore My Work
+              <ArrowDownRight size={17} />
             </Link>
           </div>
+
+          {/* PROFESSIONAL LINKS */}
+          {(settings?.githubUrl ||
+            settings?.resumeUrl) && (
+            <div className="mt-8 flex flex-wrap items-center gap-6">
+              {settings?.githubUrl && (
+                <a
+                  href={settings.githubUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-xs font-medium text-[#B9D1C1] transition hover:text-white"
+                >
+                  <FaGithub size={16} />
+                  GitHub
+                  <ArrowUpRight size={13} />
+                </a>
+              )}
+
+              {settings?.resumeUrl && (
+                <a
+                  href={settings.resumeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-xs font-medium text-[#B9D1C1] transition hover:text-white"
+                >
+                  <FileText size={16} />
+                  View Resume
+                  <ArrowUpRight size={13} />
+                </a>
+              )}
+            </div>
+          )}
+
+          {/* SPECIALIZATION */}
+          <div className="mt-11 flex flex-wrap gap-x-7 gap-y-3 border-t border-white/10 pt-6 text-xs font-medium text-[#AFCBB8]">
+            <span>Web Applications</span>
+            <span>Business Systems</span>
+            <span>Full-Stack Engineering</span>
+          </div>
+
+          {settings?.location && (
+            <p className="mt-5 flex items-center gap-2 text-xs text-[#96B5A2]">
+              <MapPin size={14} />
+              {settings.location}
+            </p>
+          )}
         </div>
 
-        <div className="relative mx-auto w-full max-w-md">
-          <div className="absolute -inset-8 -z-10 rounded-full bg-neutral-100 blur-3xl dark:bg-white/[0.04]" />
+        {/* RIGHT SIDE - LARGE BLENDED PORTRAIT */}
+        <div
+          className="pointer-events-none relative order-last mt-6 h-[420px] w-full overflow-hidden sm:h-[500px] lg:absolute lg:inset-y-0 lg:right-0 lg:mt-0 lg:h-full lg:w-[56%]"
+          aria-hidden="true"
+        >
+          {/* LIGHT BEHIND PORTRAIT */}
+          <div
+            className="absolute inset-0 bg-[radial-gradient(ellipse_at_60%_55%,rgba(32,87,60,0.30),transparent_70%)]"
+          />
 
-          <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] border border-neutral-200 bg-neutral-100 dark:border-white/10 dark:bg-neutral-900">
-            {settings?.profileImage ? (
-              <Image
-                src={
-                  settings.profileImage
-                }
-                alt={
-                  settings.siteName ||
-                  "Profile image"
-                }
-                fill
-                priority
-                sizes="(max-width: 1024px) 80vw, 420px"
-                className="object-cover"
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center text-neutral-400">
-                Profile image
-              </div>
-            )}
-
-            <div className="absolute inset-x-4 bottom-4 rounded-2xl border border-white/20 bg-black/40 p-4 text-white backdrop-blur-xl">
-              <p className="text-xs uppercase tracking-wider text-white/60">
-                Focus
-              </p>
-
-              <p className="mt-1 text-sm font-medium">
-                Full-Stack Web
-                Applications &
-                Business Systems
-              </p>
+          {profileImage ? (
+            <Image
+              src={profileImage}
+              alt=""
+              fill
+              priority
+              sizes="(max-width: 1023px) 90vw, 56vw"
+              className="object-cover object-[center_20%] grayscale brightness-[0.90] contrast-[1.15]"
+              style={{
+                maskImage:
+                  "radial-gradient(ellipse 78% 90% at 55% 46%, black 40%, transparent 95%)",
+                WebkitMaskImage:
+                  "radial-gradient(ellipse 78% 90% at 55% 46%, black 40%, transparent 95%)",
+              }}
+            />
+          ) : (
+            <div
+              className="flex h-full w-full items-center justify-center text-[clamp(7rem,19vw,15rem)] font-semibold tracking-[-0.1em] text-[#294B3A]/60"
+            >
+              RW
             </div>
-          </div>
+          )}
+
+          {/* FADE PORTRAIT INTO DARK BACKGROUND */}
+          <div
+            className="absolute inset-x-0 bottom-0 h-[40%] bg-gradient-to-t from-[#080E0C] via-[#080E0C]/30 to-transparent"
+          />
+
+          {/* LEFT EDGE SOFT BLEND */}
+          <div
+            className="absolute inset-y-0 left-0 hidden w-[23%] bg-gradient-to-r from-[#080E0C] to-transparent lg:block"
+          />
         </div>
       </div>
     </section>

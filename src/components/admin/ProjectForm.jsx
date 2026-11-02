@@ -295,10 +295,13 @@ export default function ProjectForm({
               Cover Image
             </label>
 
-            <CoverImageUploader
-              initialUrl={project?.coverImage ?? ""}
-              initialPublicId={project?.coverImagePublicId ?? ""}
-            />
+            {project?.id ? (
+              <CoverImageUploader projectId={project.id} initialUrl={project.coverImage ?? ""} />
+            ) : (
+              <p className="rounded-xl border border-dashed border-white/10 p-5 text-sm text-neutral-400">
+                Create this project first. You can upload its cover and gallery images on the edit page.
+              </p>
+            )}
           </div>
 
           <div>

@@ -4,6 +4,7 @@ import {
 } from "lucide-react";
 
 import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/site-settings";
 
 import ProjectInquiryForm from "@/components/public/ProjectInquiryForm";
 
@@ -35,7 +36,7 @@ export default async function ContactPage() {
       },
     }),
 
-    prisma.siteSetting.findFirst(),
+    getSiteSettings(),
   ]);
 
   return (

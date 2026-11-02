@@ -49,10 +49,12 @@ export default function SiteSettingsForm({
   return (
     <form
       action={formAction}
+      aria-busy={pending}
       className="space-y-8"
     >
       {state.message && (
         <div
+          role={state.success ? "status" : "alert"}
           className={`rounded-xl border px-4 py-3 text-sm ${
             state.success
               ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
@@ -73,18 +75,18 @@ export default function SiteSettingsForm({
 
           <p className="mt-1 text-sm text-neutral-500">
             Portfolio identity and
-            profile information.
+            availability.
           </p>
         </div>
 
         <div className="space-y-6">
           <div>
-            <label className="mb-2 block text-sm text-neutral-300">
+            <label htmlFor="settings-siteName" className="mb-2 block text-sm text-neutral-300">
               Site Name *
             </label>
 
             <input
-              name="siteName"
+              id="settings-siteName" name="siteName"
               required
               defaultValue={
                 settings?.siteName ??
@@ -97,114 +99,6 @@ export default function SiteSettingsForm({
               error={
                 state.errors?.siteName
               }
-            />
-          </div>
-
-          <div>
-            <label className="mb-3 block text-sm text-neutral-300">
-              Profile Image
-            </label>
-
-            <ProfileImageUploader
-              initialUrl={
-                settings?.profileImage ??
-                ""
-              }
-              initialPublicId={
-                settings?.profileImagePublicId ??
-                ""
-              }
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm text-neutral-300">
-              Resume URL
-            </label>
-
-            <input
-              type="url"
-              name="resumeUrl"
-              defaultValue={
-                settings?.resumeUrl ??
-                ""
-              }
-              placeholder="https://..."
-              className="w-full rounded-xl border border-white/10 bg-neutral-900 px-4 py-3 outline-none focus:border-white/30"
-            />
-
-            <ErrorText
-              error={
-                state.errors?.resumeUrl
-              }
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* HERO */}
-
-      <section className="rounded-2xl border border-white/10 bg-white/[0.025] p-5 sm:p-6">
-        <div className="mb-6">
-          <h2 className="text-lg font-medium">
-            Hero Section
-          </h2>
-
-          <p className="mt-1 text-sm text-neutral-500">
-            Main message visitors see
-            when they enter your
-            portfolio.
-          </p>
-        </div>
-
-        <div className="space-y-5">
-          <div>
-            <label className="mb-2 block text-sm text-neutral-300">
-              Hero Badge
-            </label>
-
-            <input
-              name="heroBadge"
-              defaultValue={
-                settings?.heroBadge ??
-                ""
-              }
-              placeholder="Available for freelance projects"
-              className="w-full rounded-xl border border-white/10 bg-neutral-900 px-4 py-3 outline-none focus:border-white/30"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm text-neutral-300">
-              Hero Title
-            </label>
-
-            <textarea
-              name="heroTitle"
-              rows={3}
-              defaultValue={
-                settings?.heroTitle ??
-                ""
-              }
-              placeholder="I build digital products that solve real business problems."
-              className="w-full resize-none rounded-xl border border-white/10 bg-neutral-900 px-4 py-3 outline-none focus:border-white/30"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm text-neutral-300">
-              Hero Subtitle
-            </label>
-
-            <textarea
-              name="heroSubtitle"
-              rows={4}
-              defaultValue={
-                settings?.heroSubtitle ??
-                ""
-              }
-              placeholder="Full-stack developer specializing in..."
-              className="w-full resize-none rounded-xl border border-white/10 bg-neutral-900 px-4 py-3 outline-none focus:border-white/30"
             />
           </div>
 
@@ -233,6 +127,79 @@ export default function SiteSettingsForm({
         </div>
       </section>
 
+      {/* HERO */}
+
+      <section className="rounded-2xl border border-white/10 bg-white/[0.025] p-5 sm:p-6">
+        <div className="mb-6">
+          <h2 className="text-lg font-medium">
+            Hero Section
+          </h2>
+
+          <p className="mt-1 text-sm text-neutral-500">
+            Main message visitors see
+            when they enter your
+            portfolio.
+          </p>
+        </div>
+
+        <div className="space-y-5">
+          <div>
+            <label htmlFor="settings-heroBadge" className="mb-2 block text-sm text-neutral-300">
+              Hero Badge
+            </label>
+
+            <input
+              id="settings-heroBadge" name="heroBadge"
+              defaultValue={
+                settings?.heroBadge ??
+                ""
+              }
+              placeholder="Available for freelance projects"
+              className="w-full rounded-xl border border-white/10 bg-neutral-900 px-4 py-3 outline-none focus:border-white/30"
+            />
+            <ErrorText error={state.errors?.heroBadge} />
+          </div>
+
+          <div>
+            <label htmlFor="settings-heroTitle" className="mb-2 block text-sm text-neutral-300">
+              Hero Title
+            </label>
+
+            <textarea
+              id="settings-heroTitle" name="heroTitle"
+              rows={3}
+              defaultValue={
+                settings?.heroTitle ??
+                ""
+              }
+              placeholder="I build digital products that solve real business problems."
+              className="w-full resize-none rounded-xl border border-white/10 bg-neutral-900 px-4 py-3 outline-none focus:border-white/30"
+            />
+            <ErrorText error={state.errors?.heroTitle} />
+          </div>
+
+          <div>
+            <label htmlFor="settings-heroSubtitle" className="mb-2 block text-sm text-neutral-300">
+              Hero Subtitle
+            </label>
+
+            <textarea
+              id="settings-heroSubtitle" name="heroSubtitle"
+              rows={4}
+              defaultValue={
+                settings?.heroSubtitle ??
+                ""
+              }
+              placeholder="Full-stack developer specializing in..."
+              className="w-full resize-none rounded-xl border border-white/10 bg-neutral-900 px-4 py-3 outline-none focus:border-white/30"
+            />
+            <ErrorText error={state.errors?.heroSubtitle} />
+          </div>
+
+
+        </div>
+      </section>
+
       {/* CONTACT */}
 
       <section className="rounded-2xl border border-white/10 bg-white/[0.025] p-5 sm:p-6">
@@ -244,13 +211,13 @@ export default function SiteSettingsForm({
 
         <div className="grid gap-5 md:grid-cols-2">
           <div>
-            <label className="mb-2 block text-sm text-neutral-300">
+            <label htmlFor="settings-email" className="mb-2 block text-sm text-neutral-300">
               Email
             </label>
 
             <input
               type="email"
-              name="email"
+              id="settings-email" name="email"
               defaultValue={
                 settings?.email ?? ""
               }
@@ -265,26 +232,27 @@ export default function SiteSettingsForm({
           </div>
 
           <div>
-            <label className="mb-2 block text-sm text-neutral-300">
+            <label htmlFor="settings-phone" className="mb-2 block text-sm text-neutral-300">
               Phone
             </label>
 
             <input
-              name="phone"
+              id="settings-phone" name="phone"
               defaultValue={
                 settings?.phone ?? ""
               }
               className="w-full rounded-xl border border-white/10 bg-neutral-900 px-4 py-3 outline-none focus:border-white/30"
             />
+            <ErrorText error={state.errors?.phone} />
           </div>
 
           <div>
-            <label className="mb-2 block text-sm text-neutral-300">
+            <label htmlFor="settings-whatsapp" className="mb-2 block text-sm text-neutral-300">
               WhatsApp
             </label>
 
             <input
-              name="whatsapp"
+              id="settings-whatsapp" name="whatsapp"
               defaultValue={
                 settings?.whatsapp ??
                 ""
@@ -292,15 +260,16 @@ export default function SiteSettingsForm({
               placeholder="+94..."
               className="w-full rounded-xl border border-white/10 bg-neutral-900 px-4 py-3 outline-none focus:border-white/30"
             />
+            <ErrorText error={state.errors?.whatsapp} />
           </div>
 
           <div>
-            <label className="mb-2 block text-sm text-neutral-300">
+            <label htmlFor="settings-location" className="mb-2 block text-sm text-neutral-300">
               Location
             </label>
 
             <input
-              name="location"
+              id="settings-location" name="location"
               defaultValue={
                 settings?.location ??
                 ""
@@ -308,6 +277,7 @@ export default function SiteSettingsForm({
               placeholder="Sri Lanka"
               className="w-full rounded-xl border border-white/10 bg-neutral-900 px-4 py-3 outline-none focus:border-white/30"
             />
+            <ErrorText error={state.errors?.location} />
           </div>
         </div>
       </section>
@@ -342,19 +312,20 @@ export default function SiteSettingsForm({
           ].map(
             ([name, label]) => (
               <div key={name}>
-                <label className="mb-2 block text-sm text-neutral-300">
+                <label htmlFor="settings-resumeUrl" className="mb-2 block text-sm text-neutral-300">
                   {label}
                 </label>
 
                 <input
                   type="url"
+                  id={`settings-${name}`}
                   name={name}
                   defaultValue={
                     settings?.[
                       name
                     ] ?? ""
                   }
-                  placeholder="https://..."
+                  placeholder="/resume/romesh-wijewardhana.pdf or https://..."
                   className="w-full rounded-xl border border-white/10 bg-neutral-900 px-4 py-3 outline-none focus:border-white/30"
                 />
 
@@ -368,6 +339,50 @@ export default function SiteSettingsForm({
               </div>
             )
           )}
+        </div>
+      </section>
+
+      {/* PROFILE */}
+      <section className="rounded-2xl border border-white/10 bg-white/[0.025] p-5 sm:p-6">
+        <div className="mb-6"><h2 className="text-lg font-medium">Profile</h2>
+          <p className="mt-1 text-sm text-neutral-500">Profile image changes save immediately. Save Settings to update your resume link.</p>
+        </div>
+        <div className="space-y-6">
+          <div>
+            <label className="mb-3 block text-sm text-neutral-300">
+              Profile Image
+            </label>
+
+            <ProfileImageUploader
+              initialUrl={
+                settings?.profileImage ??
+                ""
+              }
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm text-neutral-300">
+              Resume URL
+            </label>
+
+            <input
+              type="text"
+              id="settings-resumeUrl" name="resumeUrl"
+              defaultValue={
+                settings?.resumeUrl ??
+                ""
+              }
+              placeholder="https://..."
+              className="w-full rounded-xl border border-white/10 bg-neutral-900 px-4 py-3 outline-none focus:border-white/30"
+            />
+
+            <ErrorText
+              error={
+                state.errors?.resumeUrl
+              }
+            />
+          </div>
         </div>
       </section>
 
@@ -388,12 +403,12 @@ export default function SiteSettingsForm({
 
         <div className="space-y-5">
           <div>
-            <label className="mb-2 block text-sm text-neutral-300">
+            <label htmlFor="settings-seoTitle" className="mb-2 block text-sm text-neutral-300">
               SEO Title
             </label>
 
             <input
-              name="seoTitle"
+              id="settings-seoTitle" name="seoTitle"
               maxLength={70}
               defaultValue={
                 settings?.seoTitle ??
@@ -411,12 +426,12 @@ export default function SiteSettingsForm({
           </div>
 
           <div>
-            <label className="mb-2 block text-sm text-neutral-300">
+            <label htmlFor="settings-seoDescription" className="mb-2 block text-sm text-neutral-300">
               SEO Description
             </label>
 
             <textarea
-              name="seoDescription"
+              id="settings-seoDescription" name="seoDescription"
               rows={4}
               maxLength={170}
               defaultValue={

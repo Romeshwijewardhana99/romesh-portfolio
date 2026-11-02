@@ -1,3 +1,4 @@
+import TechnologyIcon from "@/components/public/TechnologyIcon";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -159,9 +160,10 @@ export default async function ProjectCaseStudyPage({
                         key={
                           technology.id
                         }
-                        className="rounded-full border border-neutral-200 px-3 py-1 text-xs text-neutral-500 dark:border-white/10"
+                        className="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-3 py-1 text-xs text-neutral-500 dark:border-white/10"
                       >
-                        {
+                        <TechnologyIcon name={technology.name} />
+{
                           technology.name
                         }
                       </span>

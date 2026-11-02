@@ -292,8 +292,7 @@ model SiteSetting {
   facebookUrl  String?
   instagramUrl String?
 
-  profileImage         String?
-  profileImagePublicId String?
+  profileImage String?
 
   resumeUrl String?
 

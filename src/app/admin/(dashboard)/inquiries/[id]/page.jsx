@@ -11,6 +11,9 @@ import {
 } from "lucide-react";
 
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/auth/admin";
+import { positiveIdSchema } from "@/lib/validations/inquiry";
+import InquiryReadMarker from "@/components/admin/InquiryReadMarker";
 
 import InquiryStatusSelect from "@/components/admin/InquiryStatusSelect";
 import DeleteInquiryButton from "@/components/admin/DeleteInquiryButton";
@@ -18,6 +21,7 @@ import DeleteInquiryButton from "@/components/admin/DeleteInquiryButton";
 export default async function InquiryDetailPage({
   params,
 }) {
+  await requireAdmin();
   const { id } =
     await params;
 
@@ -25,9 +29,7 @@ export default async function InquiryDetailPage({
     Number(id);
 
   if (
-    !Number.isInteger(
-      inquiryId
-    )
+    !positiveIdSchema.safeParse(id).success
   ) {
     notFound();
   }
@@ -43,25 +45,9 @@ export default async function InquiryDetailPage({
     notFound();
   }
 
-  // First open: NEW -> READ
-  if (
-    inquiry.status === "NEW"
-  ) {
-    await prisma.inquiry.update({
-      where: {
-        id: inquiry.id,
-      },
-
-      data: {
-        status: "READ",
-      },
-    });
-
-    inquiry.status = "READ";
-  }
-
   return (
     <section className="mx-auto max-w-5xl">
+      {inquiry.status === "NEW" && <InquiryReadMarker inquiryId={inquiry.id} />}
       <Link
         href="/admin/inquiries"
         className="mb-6 inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-white"
@@ -88,6 +74,7 @@ export default async function InquiryDetailPage({
               {
                 dateStyle:
                   "medium",
+                timeZone: "Asia/Colombo",
                 timeStyle:
                   "short",
               }
@@ -206,7 +193,7 @@ export default async function InquiryDetailPage({
                   size={17}
                 />
 
-                {inquiry.createdAt.toLocaleDateString()}
+                {inquiry.createdAt.toLocaleDateString("en-US", { timeZone: "Asia/Colombo" })}
               </div>
             </div>
 

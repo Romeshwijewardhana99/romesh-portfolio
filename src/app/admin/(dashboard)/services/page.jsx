@@ -1,137 +1,45 @@
 import Link from "next/link";
-import {
-  Plus,
-  Pencil,
-} from "lucide-react";
-
+import { Plus, Pencil, Wrench } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import DeleteServiceButton from "@/components/admin/DeleteServiceButton";
+import AdminPageHeading from "@/components/admin/AdminPageHeading";
 
 export default async function ServicesPage() {
-  const services =
-    await prisma.service.findMany({
-      orderBy: [
-        {
-          sortOrder: "asc",
-        },
-        {
-          title: "asc",
-        },
-      ],
-    });
+  const services = await prisma.service.findMany({ orderBy: [{ sortOrder: "asc" }, { title: "asc" }] });
 
   return (
     <section>
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-sm text-neutral-500">
-            Portfolio Content
-          </p>
-
-          <h1 className="mt-1 text-3xl font-semibold">
-            Services
-          </h1>
-
-          <p className="mt-2 text-sm text-neutral-500">
-            Manage the services shown
-            to potential clients.
-          </p>
-        </div>
-
-        <Link
-          href="/admin/services/create"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black"
-        >
-          <Plus size={17} />
-          New Service
-        </Link>
-      </div>
-
+      <AdminPageHeading eyebrow="Manage content / 02" title="Services"
+        description="Define the practical business solutions visitors can hire you to build."
+        action={<Link href="/admin/services/create" className="admin-btn-primary"><Plus size={17} /> New Service</Link>}
+      />
       {services.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-white/10 px-6 py-16 text-center">
-          <h2 className="text-lg font-medium">
-            No services yet
-          </h2>
-
-          <p className="mt-2 text-sm text-neutral-500">
-            Add the services you offer
-            to freelance clients.
-          </p>
+        <div className="admin-panel px-6 py-20 text-center">
+          <Wrench size={30} className="mx-auto text-[#448663]" />
+          <h2 className="mt-5 text-xl font-bold text-[#1B432F]">No services yet.</h2>
+          <p className="mt-2 text-sm text-[#6F8172]">Add the services you offer to potential clients.</p>
+          <Link href="/admin/services/create" className="admin-btn-primary mt-6"><Plus size={16} /> Add a Service</Link>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-white/10">
-          <div className="hidden grid-cols-[1fr_120px_100px_190px] border-b border-white/10 bg-white/[0.025] px-5 py-3 text-xs uppercase tracking-wider text-neutral-500 md:grid">
-            <div>Service</div>
-            <div>Order</div>
-            <div>Visible</div>
-            <div className="text-right">
-              Actions
+        <div className="admin-panel overflow-hidden">
+          <div className="admin-list-head hidden grid-cols-[minmax(0,1fr)_80px_100px_170px] gap-5 px-6 py-4 lg:grid">
+            <span>Service</span><span>Order</span><span>Visibility</span><span className="text-right">Actions</span>
+          </div>
+          {services.map((service) => (
+            <div key={service.id} className="admin-list-row grid gap-5 lg:grid-cols-[minmax(0,1fr)_80px_100px_170px] lg:items-center">
+              <div className="min-w-0">
+                <h2 className="text-sm font-bold text-[#204331]">{service.title}</h2>
+                <p className="mt-1 truncate text-xs text-[#879689]">/{service.slug}</p>
+                <p className="mt-2 line-clamp-2 max-w-xl text-xs leading-6 text-[#6F8173]">{service.shortDescription}</p>
+              </div>
+              <span className="text-xs font-medium text-[#708574]">{service.sortOrder}</span>
+              <div><span className={`admin-pill ${service.isVisible ? "admin-pill--green" : "admin-pill--gray"}`}>{service.isVisible ? "Visible" : "Hidden"}</span></div>
+              <div className="flex flex-wrap gap-2 lg:justify-end">
+                <Link href={`/admin/services/${service.id}/edit`} className="admin-btn-secondary"><Pencil size={15} /> Edit</Link>
+                <DeleteServiceButton serviceId={service.id} serviceTitle={service.title} />
+              </div>
             </div>
-          </div>
-
-          <div className="divide-y divide-white/10">
-            {services.map(
-              (service) => (
-                <div
-                  key={service.id}
-                  className="grid gap-4 px-5 py-5 md:grid-cols-[1fr_120px_100px_190px] md:items-center"
-                >
-                  <div>
-                    <p className="font-medium">
-                      {service.title}
-                    </p>
-
-                    <p className="mt-1 text-sm text-neutral-500">
-                      /{service.slug}
-                    </p>
-
-                    <p className="mt-2 line-clamp-1 text-sm text-neutral-600">
-                      {
-                        service.shortDescription
-                      }
-                    </p>
-                  </div>
-
-                  <div className="text-sm text-neutral-400">
-                    {service.sortOrder}
-                  </div>
-
-                  <div>
-                    <span
-                      className={`rounded-full border px-2.5 py-1 text-xs ${
-                        service.isVisible
-                          ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
-                          : "border-neutral-500/20 bg-neutral-500/10 text-neutral-400"
-                      }`}
-                    >
-                      {service.isVisible
-                        ? "Visible"
-                        : "Hidden"}
-                    </span>
-                  </div>
-
-                  <div className="flex gap-2 md:justify-end">
-                    <Link
-                      href={`/admin/services/${service.id}/edit`}
-                      className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-neutral-300 hover:bg-white/5"
-                    >
-                      <Pencil size={15} />
-                      Edit
-                    </Link>
-
-                    <DeleteServiceButton
-                      serviceId={
-                        service.id
-                      }
-                      serviceTitle={
-                        service.title
-                      }
-                    />
-                  </div>
-                </div>
-              )
-            )}
-          </div>
+          ))}
         </div>
       )}
     </section>
